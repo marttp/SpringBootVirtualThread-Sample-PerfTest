@@ -1,0 +1,6 @@
+server:
+  port: 8081
+
+service:
+  normal: "${NORM_SVC_URL:http://localhost:8082}"
+  virtual: "${VT_SVC_URL:http://localhost:8080}"

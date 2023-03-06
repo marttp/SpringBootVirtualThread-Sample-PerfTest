@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    username: postgres
+    url: jdbc:postgresql://${db.instance}:5432/postgres
+    password: passw0rd
+
+db:
+  instance: ${DB_HOST:localhost}
+
+server:
+  port: 8082

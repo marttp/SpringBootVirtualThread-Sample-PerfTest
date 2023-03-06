@@ -1,0 +1,73 @@
+version: '3.9'
+services: 
+  k6:
+    image: loadimpact/k6:0.43.1
+    container_name: k6
+    environment: 
+      - K6_OUT=influxdb=http://influxdb:8086/k6
+    volumes: 
+      - ./k6scripts:/scripts
+    depends_on:
+      - sb-vt
+
+  influxdb:
+    image: influxdb:1.8.10
+    container_name: influxdb
+    environment: 
+      - INFLUXDB_DB=k6
+      - INFLUXDB_HTTP_MAX_BODY_SIZE=0
+    ports: 
+      - 8086:8086
+    volumes: 
+      - ./data/influxdb:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    environment: 
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    ports: 
+      - 3000:3000
+    volumes: 
+      - ./data/grafana:/var/lib/grafana
+  
+  postgres:
+    image: postgres
+    container_name: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=passw0rd
+
+  sb-vt:
+    image: marttp/perf-vt-main
+    container_name: sb-vt
+    environment: 
+      - DB_HOST=postgres
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+
+  sb-norm:
+    image: marttp/perf-norm-main
+    container_name: sb-norm
+    environment: 
+      - DB_HOST=postgres
+    ports:
+      - 8082:8082
+    depends_on:
+      - postgres
+
+  sb-downstream:
+    image: marttp/perf-downstream
+    container_name: sb-downstream
+    environment: 
+      - NORM_SVC_URL=http://sb-norm:8082
+      - VT_SVC_URL=http://sb-vt:8080
+    ports:
+      - 8081:8081
+    depends_on:
+      - sb-norm
+      - sb-vt
